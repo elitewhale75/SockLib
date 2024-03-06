@@ -10,7 +10,7 @@ These instructions will help with installation and linking modules with the libr
 
 ### Prerequisites
 
-* **CMakke v3.22+** - found at [https://cmake.org/](https://cmake.org/)
+* **CMake v3.22+** - found at [https://cmake.org/](https://cmake.org/)
 * **C++ Compiler** - needs to support at least the **C++17** standard, i.e. *MSVC*,
 *GCC*, *Clang*
 
