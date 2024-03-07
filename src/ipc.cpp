@@ -4,10 +4,36 @@
 #include <sys/socket.h>
 
 #define BUFFER_SIZE 128
+#define MAX_CONNECTS 3
 
-int ipc::listen(){
-    std::cout << "Listening to process: " << std::endl;
-    return 0;
+int ipc::ipcListen(int socketFD){
+    int ret;
+    int data_socket;
+    int result;
+
+    /* Prepare for accepting connections, with backlog size 20 */
+    ret = listen(socketFD, MAX_CONNECTS);
+    if(ret == -1){
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Server process loop for handling connections */
+    for(;;){
+
+        /* Accept is blocking syscall */
+        data_socket = accept(socketFD, NULL, NULL);
+        if(data_socket == -1){
+            perror("accept");
+            exit(EXIT_FAILURE);
+        }
+        std::cout << "Connection accepted from client" << std::endl;
+
+        for(;;){
+
+        }
+    }
+    return -1;
 }
 
 int ipc::send(){
@@ -15,9 +41,8 @@ int ipc::send(){
     return 0;
 }
 
-/*Takes in a path a pointer to a socket. Binds socket to address
- * And returns file descriptor */
-int ipc::spawnSocket(sockaddr_un * sock , char const * sockName){
+//TODO Replace character pointers to strings
+int ipc::bindSock(sockaddr_un * sock , char const * sockName){
 
     int ret;
     int connection_socket;
@@ -27,7 +52,6 @@ int ipc::spawnSocket(sockaddr_un * sock , char const * sockName){
     unlink(sockName);
     /* Create Master Socket */
     connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
-
     if(connection_socket == -1){
         perror("socket");
         exit(EXIT_FAILURE);
@@ -45,7 +69,6 @@ int ipc::spawnSocket(sockaddr_un * sock , char const * sockName){
     ret = bind(connection_socket, 
             (const struct sockaddr *) sock, 
             sizeof(sockaddr_un));
-
     if(ret == -1){
         perror("bind");
         exit(EXIT_FAILURE);

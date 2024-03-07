@@ -1,7 +1,7 @@
 #include <sys/un.h>
 
 namespace ipc {
-    int listen();
+    int ipcListen(int socketFD);
     int send();
-    int spawnSocket(sockaddr_un * sock , char const * sockName);
+    int bindSock(sockaddr_un * sock , char const * sockName);
 };
