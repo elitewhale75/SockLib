@@ -42,7 +42,6 @@ int server::serverListen(int socketFD , char * dataBuffer){
 
     /* Send data back to client */
     printf("%s\n", dataBuffer);
-
     std::cout << "Sending response back to client" << std::endl;
     ret = write(dataSocket, dataBuffer, BUFFER_SIZE);
     if(ret == -1){
@@ -60,13 +59,8 @@ int server::serverListen(int socketFD , char * dataBuffer){
     return 0;
 }
 
-int client::send(){
-    std::cout << "Sending to process: " << std::endl;
-    return 0;
-}
-
 //TODO Replace character pointers to strings
-int server::bindSock(sockaddr_un * sock , char const * sockFile){
+int server::bindSock(struct sockaddr_un * sock , char const * sockFile){
 
     int ret;
     int connection_socket;
@@ -103,3 +97,36 @@ int server::bindSock(sockaddr_un * sock , char const * sockFile){
 
     return connection_socket;
 }
+
+int client::createSocket(struct sockaddr_un * sock , char const * sockFile){
+    int dataSocket;
+    int ret;
+
+    /* Create data socket */
+    dataSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+    if(dataSocket == -1){
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Clear whole structure and populate standard fields */
+    memset(sock, 0, sizeof(struct sockaddr_un));
+
+    /* Connect to socket address. Non-blocking syscall */
+    sock -> sun_family = AF_UNIX;
+    strncpy(sock->sun_path, sockFile, sizeof(sock->sun_path) - 1);
+    ret = connect(dataSocket, 
+            (const struct sockaddr *) sock, 
+            sizeof(sockaddr_un));
+    if(ret ==-1){
+        fprintf(stderr, "The server is down.\n");
+        exit(EXIT_FAILURE);
+    }
+    return dataSocket;
+}
+
+int client::send(int socketFD , char * dataBuffer){
+    std::cout << "Sending to process: " << std::endl;
+    return 0;
+}
+

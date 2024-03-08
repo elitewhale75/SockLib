@@ -2,9 +2,10 @@
 
 namespace server {
     int serverListen(int socketFD , char * dataBuffer);
-    int bindSock(sockaddr_un * sock , char const * sockFile);
+    int bindSock(struct sockaddr_un * sock , char const * sockFile);
 };
 
 namespace client{
-    int send();
+    int createSocket(struct sockaddr_un * sock , char const * sockFile);
+    int send(int socketFD , char * dataBuffer);
 };
