@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <sys/socket.h>
 
-#define DATA_SIZE 255
 #define BUFFER_SIZE 128
 #define MAX_CONNECTS 3
 
@@ -20,7 +19,7 @@ int server::serverListen(int socketFD , char * dataBuffer){
         exit(EXIT_FAILURE);
     }
 
-    /* Accept syscall */
+    /* Accept syscall and initialize data file descriptor */
     dataSocket = accept(socketFD, NULL, NULL);
     if(dataSocket == -1){
         perror("accept");
@@ -34,7 +33,7 @@ int server::serverListen(int socketFD , char * dataBuffer){
     /* Wait for next data packet
      * Block server process. Wait for data to arrive from client */
     std::cout << "Waiting for data from client" << std::endl;
-    ret = read(dataSocket, dataBuffer, DATA_SIZE);
+    ret = read(dataSocket, dataBuffer, BUFFER_SIZE);
     if(ret == -1){
         perror("read");
         exit(EXIT_FAILURE);
@@ -95,6 +94,7 @@ int server::bindSock(struct sockaddr_un * sock , char const * sockFile){
         << ret 
         << std::endl;
 
+    /* Return master file descriptor */
     return connection_socket;
 }
 
@@ -125,8 +125,27 @@ int client::createSocket(struct sockaddr_un * sock , char const * sockFile){
     return dataSocket;
 }
 
-int client::send(int socketFD , char * dataBuffer){
-    std::cout << "Sending to process: " << std::endl;
+int client::send(int dataSocket , char * dataBuffer){
+    int ret;
+
+    /* Send data to server from buffer */
+    ret = write(dataSocket, dataBuffer, BUFFER_SIZE );
+    if(ret == -1){
+        perror("write");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Request data from server */
+    memset(dataBuffer, 0, BUFFER_SIZE);
+    ret = read(dataSocket, dataBuffer, BUFFER_SIZE ); 
+    if(ret == -1){
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+    std::cout << "Recvd from Server: " << dataBuffer << std::endl;
+
+    /* Close socket */
+    close(dataSocket);
     return 0;
 }
 
