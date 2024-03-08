@@ -1,7 +1,10 @@
 #include <sys/un.h>
 
-namespace ipc {
-    int ipcListen(int socketFD);
+namespace server {
+    int serverListen(int socketFD , char * dataBuffer);
+    int bindSock(sockaddr_un * sock , char const * sockFile);
+};
+
+namespace client{
     int send();
-    int bindSock(sockaddr_un * sock , char const * sockName);
 };
