@@ -45,20 +45,19 @@ int server::bindSocket(struct sockaddr_un * sock , char const * sockFile){
     return connection_socket;
 }
 
+// Prepare for accepting n number of connections
 int server::serverListen(int socketFD, int maxConnections){
     int ret;
 
-    /* Prepare for accepting connections, with backlog size 20 */
     ret = listen(socketFD, maxConnections);
     if(ret == -1){
         perror("listen");
         exit(EXIT_FAILURE);
     }
-
     return 0;
 }
 
-int server::serverAccept(int socketFD, char * dataBuffer){
+int server::serverAccept(int socketFD){
     int ret;
     int dataSocket; // Carries out actual data exchange with client
     /* Accept syscall and initialize data file descriptor */
@@ -69,38 +68,10 @@ int server::serverAccept(int socketFD, char * dataBuffer){
     }
     std::cout << "Connection accepted from client" << std::endl;
 
-    /* Prepare buffer */
-    memset(dataBuffer, 0, BUFFER_SIZE);
-
-    /* Wait for next data packet
-     * Block server process. Wait for data to arrive from client */
-    std::cout << "Waiting for data from client" << std::endl;
-    ret = read(dataSocket, dataBuffer, BUFFER_SIZE);
-    if(ret == -1){
-        perror("read");
-        exit(EXIT_FAILURE);
-    }
-
-    /* Send data back to client */
-    printf("%s\n", dataBuffer);
-    std::cout << "Sending response back to client" << std::endl;
-    ret = write(dataSocket, dataBuffer, BUFFER_SIZE);
-    if(ret == -1){
-        perror("write");
-        exit(EXIT_FAILURE);
-    }
-    /* Close Socket */
-    close(dataSocket);
-    /* Close Master Socket */
-    close(socketFD);
-    /* Server should release resources before getting terminated */
-    // unlink(SOCKET_NAME);
-    
-    /* Server operations executed successfully */
-    return 0;
+    return dataSocket;
 }
 
-
+// TODO Separate socket creation and client connection
 int client::createSocket(struct sockaddr_un * sock , char const * sockFile){
     int dataSocket;
     int ret;
