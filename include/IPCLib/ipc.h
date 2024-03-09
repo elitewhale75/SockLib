@@ -1,8 +1,10 @@
 #include <sys/un.h>
 
 namespace server {
-    int serverListen(int socketFD , char * dataBuffer);
-    int bindSock(struct sockaddr_un * sock , char const * sockFile);
+    int bindSocket(struct sockaddr_un * sock , char const * sockFile);
+    int serverListen(int socketFD, int connections);
+    int serverAccept(int socketFD, char * dataBuffer);
+    int serverSend();
 };
 
 namespace client{

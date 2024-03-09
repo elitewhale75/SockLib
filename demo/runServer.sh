@@ -1,3 +1,3 @@
 #! /bin/sh
 
-./serverDemo
+out/build/serverDemo

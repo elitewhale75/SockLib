@@ -4,21 +4,63 @@
 #include <sys/socket.h>
 
 #define BUFFER_SIZE 128
-#define MAX_CONNECTS 3
 
-/* TODO Split listen and accept+read syscalls into different routines*/
-int server::serverListen(int socketFD , char * dataBuffer){
+//TODO Replace character pointers to strings
+int server::bindSocket(struct sockaddr_un * sock , char const * sockFile){
+
     int ret;
-    int dataSocket; // Carries out actual data exchange with client
-    int result;
+    int connection_socket;
+
+    /* In case program exiteded inadvertently on last run
+     * remove socket */
+    unlink(sockFile);
+    /* Create Master Socket */
+    connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    if(connection_socket == -1){
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
+    std::cout << "Socket was created successfully" << std::endl;
+
+    /*Initialize socket*/
+    memset(sock, 0, sizeof(struct sockaddr_un));
+
+    /*Specify socket credentials*/
+    sock -> sun_family = AF_UNIX;
+    strncpy(sock->sun_path, sockFile, sizeof(sock->sun_path) - 1);
+
+    /*Bind syscall*/
+    ret = bind(connection_socket, 
+            (const struct sockaddr *) sock, 
+            sizeof(sockaddr_un));
+    if(ret == -1){
+        perror("bind");
+        exit(EXIT_FAILURE);
+    }
+    std::cout << "Socket successfully binded with status: " 
+        << ret 
+        << std::endl;
+
+    /* Return master file descriptor */
+    return connection_socket;
+}
+
+int server::serverListen(int socketFD, int maxConnections){
+    int ret;
 
     /* Prepare for accepting connections, with backlog size 20 */
-    ret = listen(socketFD, MAX_CONNECTS);
+    ret = listen(socketFD, maxConnections);
     if(ret == -1){
         perror("listen");
         exit(EXIT_FAILURE);
     }
 
+    return 0;
+}
+
+int server::serverAccept(int socketFD, char * dataBuffer){
+    int ret;
+    int dataSocket; // Carries out actual data exchange with client
     /* Accept syscall and initialize data file descriptor */
     dataSocket = accept(socketFD, NULL, NULL);
     if(dataSocket == -1){
@@ -58,45 +100,6 @@ int server::serverListen(int socketFD , char * dataBuffer){
     return 0;
 }
 
-//TODO Replace character pointers to strings
-int server::bindSock(struct sockaddr_un * sock , char const * sockFile){
-
-    int ret;
-    int connection_socket;
-
-    /* In case program exiteded inadvertently on last run
-     * remove socket */
-    unlink(sockFile);
-    /* Create Master Socket */
-    connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
-    if(connection_socket == -1){
-        perror("socket");
-        exit(EXIT_FAILURE);
-    }
-    std::cout << "Socket was created successfully" << std::endl;
-
-    /*Initialize socket*/
-    memset(sock, 0, sizeof(struct sockaddr_un));
-
-    /*Specify socket credentials*/
-    sock -> sun_family = AF_UNIX;
-    strncpy(sock->sun_path, sockFile, sizeof(sock->sun_path) - 1);
-
-    /*Bind syscall*/
-    ret = bind(connection_socket, 
-            (const struct sockaddr *) sock, 
-            sizeof(sockaddr_un));
-    if(ret == -1){
-        perror("bind");
-        exit(EXIT_FAILURE);
-    }
-    std::cout << "Socket successfully binded with status: " 
-        << ret 
-        << std::endl;
-
-    /* Return master file descriptor */
-    return connection_socket;
-}
 
 int client::createSocket(struct sockaddr_un * sock , char const * sockFile){
     int dataSocket;
