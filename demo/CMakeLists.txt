@@ -1,1 +1,5 @@
 project(demo)
+add_executable(serverDemo Server-Demo.cpp)
+add_executable(clientDemo Client-Demo.cpp)
+target_link_libraries(serverDemo IPCLib)
+target_link_libraries(clientDemo IPCLib)
