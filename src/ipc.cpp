@@ -20,7 +20,7 @@ int server::bindSocket(struct sockaddr_un * sock , char const * sockFile){
         perror("socket");
         exit(EXIT_FAILURE);
     }
-    std::cout << "Socket was created successfully" << std::endl;
+    std::cout << "Socket was created successfully" << '\n';
 
     /*Initialize socket*/
     memset(sock, 0, sizeof(struct sockaddr_un));
@@ -39,13 +39,12 @@ int server::bindSocket(struct sockaddr_un * sock , char const * sockFile){
     }
     std::cout << "Socket successfully binded with status: " 
         << ret 
-        << std::endl;
+        << '\n';
 
     /* Return master file descriptor */
     return connection_socket;
 }
 
-// Prepare for accepting n number of connections
 int server::serverListen(int socketFD, int maxConnections){
     int ret;
 
@@ -58,7 +57,6 @@ int server::serverListen(int socketFD, int maxConnections){
 }
 
 int server::serverAccept(int socketFD){
-    int ret;
     int dataSocket; // Carries out actual data exchange with client
     /* Accept syscall and initialize data file descriptor */
     dataSocket = accept(socketFD, NULL, NULL);
@@ -66,15 +64,13 @@ int server::serverAccept(int socketFD){
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    std::cout << "Connection accepted from client" << std::endl;
+    std::cout << "Process connection established" << '\n';
 
     return dataSocket;
 }
 
-// TODO Separate socket creation and client connection
 int client::createSocket(struct sockaddr_un * sock , char const * sockFile){
     int dataSocket;
-    int ret;
 
     /* Create data socket */
     dataSocket = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -89,14 +85,20 @@ int client::createSocket(struct sockaddr_un * sock , char const * sockFile){
     /* Connect to socket address. Non-blocking syscall */
     sock -> sun_family = AF_UNIX;
     strncpy(sock->sun_path, sockFile, sizeof(sock->sun_path) - 1);
+    return dataSocket;
+}
+
+int client::connect(struct sockaddr_un * sock , int dataSocket){
+    int ret;
+
     ret = connect(dataSocket, 
             (const struct sockaddr *) sock, 
             sizeof(sockaddr_un));
     if(ret ==-1){
-        fprintf(stderr, "The server is down.\n");
+        fprintf(stderr, "Server process is dead");
         exit(EXIT_FAILURE);
     }
-    return dataSocket;
+    return 0;
 }
 
 int client::send(int dataSocket , char * dataBuffer){
@@ -116,10 +118,7 @@ int client::send(int dataSocket , char * dataBuffer){
         perror("read");
         exit(EXIT_FAILURE);
     }
-    std::cout << "Recvd from Server: " << dataBuffer << std::endl;
+    std::cout << "Recvd from server process: " << dataBuffer << '\n';
 
-    /* Close socket */
-    close(dataSocket);
     return 0;
 }
-

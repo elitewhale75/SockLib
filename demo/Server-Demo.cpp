@@ -46,8 +46,9 @@ int main () {
             perror("write");
             exit(EXIT_FAILURE);
         }
-
     }
-
+    // Perform clean up before terminating server proccess
+    close(masterSocket);
+    close(dataFile);
     return 0;
 }
