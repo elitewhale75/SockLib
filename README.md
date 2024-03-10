@@ -15,3 +15,5 @@ These instructions will help with installation and linking modules with the libr
 *GCC*, *Clang*
 
 ### Installing
+
+* In order run ./configure ./build and ./install scripts. Will install library to local directory.
