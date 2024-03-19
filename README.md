@@ -1,6 +1,6 @@
-# IPCLib 
+# SockLib 
 
-A Simple IPC Interface that supports two-way communication between related/unrelated Linux proccesses. Unix domain sockets named pipes will be supported.
+A simple Unix Domain Socket Library that supports multiplexing and thread safety
 
 ## Features
 

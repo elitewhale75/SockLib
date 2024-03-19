@@ -1,19 +1,19 @@
+#include "../include/SockLib/sock.h"
 #include <iostream>
-#include "../include/IPCLib/ipc.h"
 #include <unistd.h>
 #include <sys/socket.h>
 
 #define BUFFER_SIZE 128
 
 //TODO Replace character pointers to strings
-int server::bindSocket(struct sockaddr_un * sock , char const * sockFile){
+int server::bindSocket(struct sockaddr_un * sock , std::string sockFile){
 
     int ret;
     int connection_socket;
 
     /* In case program exiteded inadvertently on last run
      * remove socket */
-    unlink(sockFile);
+    unlink(sockFile.c_str());
     /* Create Master Socket */
     connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if(connection_socket == -1){
@@ -27,7 +27,7 @@ int server::bindSocket(struct sockaddr_un * sock , char const * sockFile){
 
     /*Specify socket credentials*/
     sock -> sun_family = AF_UNIX;
-    strncpy(sock->sun_path, sockFile, sizeof(sock->sun_path) - 1);
+    strncpy(sock->sun_path, sockFile.c_str(), sizeof(sock->sun_path) - 1);
 
     /*Bind syscall*/
     ret = bind(connection_socket, 
@@ -45,10 +45,10 @@ int server::bindSocket(struct sockaddr_un * sock , char const * sockFile){
     return connection_socket;
 }
 
-int server::serverListen(int socketFD, int maxConnections){
+int server::serverListen(int masterSocket, int maxConnections){
     int ret;
 
-    ret = listen(socketFD, maxConnections);
+    ret = listen(masterSocket, maxConnections);
     if(ret == -1){
         perror("listen");
         exit(EXIT_FAILURE);
@@ -56,10 +56,10 @@ int server::serverListen(int socketFD, int maxConnections){
     return 0;
 }
 
-int server::serverAccept(int socketFD){
+int server::serverAccept(int masterSocket){
     int dataSocket; // Carries out actual data exchange with client
     /* Accept syscall and initialize data file descriptor */
-    dataSocket = accept(socketFD, NULL, NULL);
+    dataSocket = accept(masterSocket, NULL, NULL);
     if(dataSocket == -1){
         perror("accept");
         exit(EXIT_FAILURE);
@@ -69,7 +69,7 @@ int server::serverAccept(int socketFD){
     return dataSocket;
 }
 
-int client::createSocket(struct sockaddr_un * sock , char const * sockFile){
+int client::createSocket(struct sockaddr_un * sock , std::string sockFile){
     int dataSocket;
 
     /* Create data socket */
@@ -84,7 +84,7 @@ int client::createSocket(struct sockaddr_un * sock , char const * sockFile){
 
     /* Connect to socket address. Non-blocking syscall */
     sock -> sun_family = AF_UNIX;
-    strncpy(sock->sun_path, sockFile, sizeof(sock->sun_path) - 1);
+    strncpy(sock->sun_path, sockFile.c_str(), sizeof(sock->sun_path) - 1);
     return dataSocket;
 }
 

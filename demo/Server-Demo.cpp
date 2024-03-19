@@ -1,13 +1,17 @@
-#include <ipclib/ipc.h>
+#include <sock/sock.h>
 #include <iostream>
 #include <unistd.h>
+#include <string>
 
 #define SOCK_NAME "/tmp/DemoSocket"
 #define BUFFER_SIZE 128
 
 
 int main () {
-    const int MAX_CONNECTIONS = 3;
+    // Client FDs for maintaining order. Master FD is also member
+    const int MAX_CONNECTIONS = 4;
+    int monitored_FD_set[MAX_CONNECTIONS];
+
     int masterSocket;
     int dataFile;
     int ret;
@@ -24,7 +28,7 @@ int main () {
         // Block server process and wait for requests from client processes
         dataFile = server::serverAccept(masterSocket);
 
-        // Service client request
+        // Process request received, service request
         memset(dataBuffer, 0, BUFFER_SIZE);
         ret = read(dataFile, dataBuffer, BUFFER_SIZE);
         if(ret == -1){
