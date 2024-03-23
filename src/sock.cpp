@@ -2,10 +2,11 @@
 #include <iostream>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #define BUFFER_SIZE 128
 
-// TODO: ioctl call
 int server::bindSocket(struct sockaddr_un * sock , std::string sockFile){
 
     int ret;                // Use for error handling
@@ -27,6 +28,9 @@ int server::bindSocket(struct sockaddr_un * sock , std::string sockFile){
     memset(sock, 0, sizeof(struct sockaddr_un));
     sock -> sun_family = AF_UNIX;
     strncpy(sock->sun_path, sockFile.c_str(), sizeof(sock->sun_path) - 1);
+
+    /* Allow Async I/O */
+    fcntl(connection_socket, F_SETFL, O_NONBLOCK);
 
     /*Bind syscall*/
     ret = bind(connection_socket, 
@@ -57,18 +61,24 @@ int server::serverListen(int masterSocket, int maxConnections){
 
 int server::serverAccept(int masterSocket){
     int dataSocket; // Carries out actual data exchange with client
+
     /* Accept syscall and initialize data file descriptor */
     dataSocket = accept(masterSocket, NULL, NULL);
     if(dataSocket == -1){
-        perror("accept");
-        exit(EXIT_FAILURE);
+        // No pending connections
+        if(errno == EAGAIN || errno == EWOULDBLOCK){
+            ;
+        }else{
+            perror("accept");
+            exit(EXIT_FAILURE);
+        }
+    }else{
+        std::cout << "Process connection established" << '\n';
     }
-    std::cout << "Process connection established" << '\n';
 
     return dataSocket;
 }
 
-// TODO: ioctl calls
 int client::createSocket(struct sockaddr_un * sock , std::string sockFile){
     int dataSocket;
 
@@ -101,6 +111,7 @@ int client::connect(struct sockaddr_un * sock , int dataSocket){
     return 0;
 }
 
+// TODO: Send and recv
 int client::send(int dataSocket , char * dataBuffer){
     int ret;
 

@@ -19,7 +19,10 @@ int main () {
     fgets(dataBuffer, 128, stdin);
     client::send(dataFile, dataBuffer);
 
+    std::cout << dataBuffer << '\n';
+
     // Close file descriptors after use
     close(dataFile);
+
     return 0;
 }

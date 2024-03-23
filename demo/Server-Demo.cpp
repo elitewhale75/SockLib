@@ -25,38 +25,36 @@ int main () {
     server::serverListen(masterSocket, MAX_CONNECTIONS);
 
     while(1){
-        // Block server process and wait for requests from client processes
+        sleep(3);
         dataFile = server::serverAccept(masterSocket);
 
-        // Process request received, service request
-        memset(dataBuffer, 0, BUFFER_SIZE);
-        ret = read(dataFile, dataBuffer, BUFFER_SIZE);
-        if(ret == -1){
-            perror("read");
-            exit(EXIT_FAILURE);
-        }
+        if (dataFile != -1){
+            // Process request received, service request
+            memset(dataBuffer, 0, BUFFER_SIZE);
+            ret = read(dataFile, dataBuffer, BUFFER_SIZE);
+            if(ret == -1){
+                perror("read");
+                exit(EXIT_FAILURE);
+            }
 
-        // Perform operations replace Ls with Ws
-        char * current;
-        for ( int i = 0 ; *(dataBuffer + i) ; i++ ) {
-            current = dataBuffer + i;
-            if( *current == 'l' )
-                *current = 'w';
-        }
+            // Perform operations replace Ls with Ws
+            char * current;
+            for ( int i = 0 ; *(dataBuffer + i) ; i++ ) {
+                current = dataBuffer + i;
+                if( *current == 'l' )
+                    *current = 'w';
+            }
 
-        // Send message back to client process
-        ret = write(dataFile, dataBuffer, BUFFER_SIZE);
-        if(ret == -1){
-            perror("write");
-            exit(EXIT_FAILURE);
+            // Send message back to client process
+            ret = write(dataFile, dataBuffer, BUFFER_SIZE);
+            if(ret == -1){
+                perror("write");
+                exit(EXIT_FAILURE);
+            }
         }
     }
     // Perform clean up before terminating server proccess
     close(masterSocket);
     close(dataFile);
-    return 0;
-}
-
-int operation(std::string data){
     return 0;
 }
