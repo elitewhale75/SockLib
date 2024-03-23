@@ -1,7 +1,9 @@
+#ifndef SOCKLIB
+#define SOCKLIB
 #include <sys/un.h>
 #include <string>
 
-namespace server {
+namespace server{
     /**
      * @brief Creates commmunication endpoint from 
      * file descriptor specified in path
@@ -56,3 +58,4 @@ namespace client{
      */
     int send(int socketFD , char * dataBuffer);
 };
+#endif

@@ -5,15 +5,16 @@
 
 #define BUFFER_SIZE 128
 
-//TODO Replace character pointers to strings
+// TODO: ioctl call
 int server::bindSocket(struct sockaddr_un * sock , std::string sockFile){
 
-    int ret;
-    int connection_socket;
+    int ret;                // Use for error handling
+    int connection_socket;  // Return value for master socket
 
     /* In case program exiteded inadvertently on last run
      * remove socket */
     unlink(sockFile.c_str());
+
     /* Create Master Socket */
     connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
     if(connection_socket == -1){
@@ -22,10 +23,8 @@ int server::bindSocket(struct sockaddr_un * sock , std::string sockFile){
     }
     std::cout << "Socket was created successfully" << '\n';
 
-    /*Initialize socket*/
+    /*Initialize socket credentials*/
     memset(sock, 0, sizeof(struct sockaddr_un));
-
-    /*Specify socket credentials*/
     sock -> sun_family = AF_UNIX;
     strncpy(sock->sun_path, sockFile.c_str(), sizeof(sock->sun_path) - 1);
 
@@ -69,6 +68,7 @@ int server::serverAccept(int masterSocket){
     return dataSocket;
 }
 
+// TODO: ioctl calls
 int client::createSocket(struct sockaddr_un * sock , std::string sockFile){
     int dataSocket;
 

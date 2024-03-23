@@ -5,18 +5,18 @@
 
 #define SOCK_NAME "/tmp/DemoSocket"
 #define BUFFER_SIZE 128
+const int MAX_CONNECTIONS = 4;
 
 
 int main () {
     // Client FDs for maintaining order. Master FD is also member
-    const int MAX_CONNECTIONS = 4;
     int monitored_FD_set[MAX_CONNECTIONS];
 
     int masterSocket;
-    int dataFile;
-    int ret;
     sockaddr_un sock;
+    int dataFile;
     char * dataBuffer = (char *) malloc(255);
+    int ret;
 
     // Create Master Socket
     masterSocket = server::bindSocket(&sock, SOCK_NAME);
@@ -24,7 +24,7 @@ int main () {
     // Open server process to 3 client proccesses
     server::serverListen(masterSocket, MAX_CONNECTIONS);
 
-    for (;;){
+    while(1){
         // Block server process and wait for requests from client processes
         dataFile = server::serverAccept(masterSocket);
 
@@ -54,5 +54,9 @@ int main () {
     // Perform clean up before terminating server proccess
     close(masterSocket);
     close(dataFile);
+    return 0;
+}
+
+int operation(std::string data){
     return 0;
 }

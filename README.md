@@ -1,6 +1,6 @@
 # SockLib 
 
-A simple Unix Domain Socket Library that supports multiplexing and thread safety
+A simple Unix Domain Socket Library that supports asynchronous file I/O and multiplexing
 
 ## Features
 
