@@ -12,7 +12,7 @@ namespace server{
      * @param sockFile Path to file for socket creation
      * @return master file descriptor for server process
      */
-    int bindSocket(struct sockaddr_un * sock , std::string sockFile);
+    int bind_socket(struct sockaddr_un * sock , std::string sockFile);
 
     /**
      * @brief Prepare master socket to listen to n number of connections
@@ -21,15 +21,16 @@ namespace server{
      * @param connections number of connections
      * @return 0 upon successful completion
      */
-    int serverListen(int masterSocket, int connections);
+    void server_listen(int masterSocket, int connections);
 
     /**
-     * @brief Blocking syscall, wait for messages from client process
+     * @brief Check for messages from client process
      *
      * @param Master socket file descriptor to listen to
      * @return New file descriptor for data to pass between proccesses
      */
-    int serverAccept(int masterSocket);
+    int server_accept(int masterSocket);
+
 };
 
 namespace client{
@@ -40,7 +41,7 @@ namespace client{
      * @param sockFile Path to file for socket creation
      * @return data file descriptor for client process
      */
-    int createSocket(struct sockaddr_un * sock , std::string sockFile);
+    int create_socket(struct sockaddr_un * sock , std::string sockFile);
     /**
      * @brief Establish connection to master process for message passing
      *
@@ -49,6 +50,10 @@ namespace client{
      * @return 0 upon successful completion
      */
     int connect(struct sockaddr_un * sock , int dataSocket);
+};
+
+namespace sock{
+
     /**
      * @brief Send message to master and read response from master
      *
@@ -56,6 +61,13 @@ namespace client{
      * @param dataBuffer Memory space to send and read messages from
      * @return 0 upon successful completion and new data to dataBuffer
      */
-    int send(int socketFD , char * dataBuffer);
+    int msg_send(int socketFD , std::string message);
+    /**
+     * @brief
+     *
+     * @param
+     * @return
+     */
+    std::string msg_receive(int data_socket);
 };
 #endif

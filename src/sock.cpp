@@ -2,12 +2,13 @@
 #include <iostream>
 #include <unistd.h>
 #include <sys/socket.h>
-#include <fcntl.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #define BUFFER_SIZE 128
 
-int server::bindSocket(struct sockaddr_un * sock , std::string sockFile){
+//TODO: Change from nonblocking to async?
+int server::bind_socket(struct sockaddr_un * sock , std::string sockFile){
 
     int ret;                // Use for error handling
     int connection_socket;  // Return value for master socket
@@ -29,7 +30,7 @@ int server::bindSocket(struct sockaddr_un * sock , std::string sockFile){
     sock -> sun_family = AF_UNIX;
     strncpy(sock->sun_path, sockFile.c_str(), sizeof(sock->sun_path) - 1);
 
-    /* Allow Async I/O */
+    // Set up nonblocking (replace with AIO?)
     fcntl(connection_socket, F_SETFL, O_NONBLOCK);
 
     /*Bind syscall*/
@@ -48,7 +49,7 @@ int server::bindSocket(struct sockaddr_un * sock , std::string sockFile){
     return connection_socket;
 }
 
-int server::serverListen(int masterSocket, int maxConnections){
+void server::server_listen(int masterSocket, int maxConnections){
     int ret;
 
     ret = listen(masterSocket, maxConnections);
@@ -56,10 +57,9 @@ int server::serverListen(int masterSocket, int maxConnections){
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    return 0;
 }
 
-int server::serverAccept(int masterSocket){
+int server::server_accept(int masterSocket){
     int dataSocket; // Carries out actual data exchange with client
 
     /* Accept syscall and initialize data file descriptor */
@@ -79,7 +79,7 @@ int server::serverAccept(int masterSocket){
     return dataSocket;
 }
 
-int client::createSocket(struct sockaddr_un * sock , std::string sockFile){
+int client::create_socket(struct sockaddr_un * sock , std::string sockFile){
     int dataSocket;
 
     /* Create data socket */
@@ -112,24 +112,32 @@ int client::connect(struct sockaddr_un * sock , int dataSocket){
 }
 
 // TODO: Send and recv
-int client::send(int dataSocket , char * dataBuffer){
+int sock::msg_send(int dataSocket , std::string message){
     int ret;
 
     /* Send data to server from buffer */
-    ret = write(dataSocket, dataBuffer, BUFFER_SIZE );
+    ret = send(dataSocket, message.c_str(), message.size(), MSG_WAITALL);
     if(ret == -1){
-        perror("write");
+        perror("send");
         exit(EXIT_FAILURE);
     }
-
-    /* Request data from server */
-    memset(dataBuffer, 0, BUFFER_SIZE);
-    ret = read(dataSocket, dataBuffer, BUFFER_SIZE ); 
-    if(ret == -1){
-        perror("read");
-        exit(EXIT_FAILURE);
-    }
-    std::cout << "Recvd from server process: " << dataBuffer << '\n';
 
     return 0;
+}
+
+std::string sock::msg_receive(int data_socket){
+    int ret;
+    char * data_buffer;
+    /* Request data from server */
+    data_buffer = (char *) malloc(BUFFER_SIZE);
+    memset(data_buffer, 0, BUFFER_SIZE);
+    ret = recv(data_socket, data_buffer, BUFFER_SIZE, 0); 
+    if(ret == -1){
+        perror("recv");
+        exit(EXIT_FAILURE);
+    }
+
+    std::string message(data_buffer);
+    free(data_buffer);
+    return message;
 }

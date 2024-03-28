@@ -9,52 +9,42 @@ const int MAX_CONNECTIONS = 4;
 
 
 int main () {
-    // Client FDs for maintaining order. Master FD is also member
-    int monitored_FD_set[MAX_CONNECTIONS];
 
-    int masterSocket;
-    sockaddr_un sock;
-    int dataFile;
-    char * dataBuffer = (char *) malloc(255);
-    int ret;
+    int             master_socket_fd;
+    int             data_fd;
+    sockaddr_un     sock;
+    int             ret;
+    std::string     buffer;
+    
+    // Client FDs for maintaining order. Master FD is also member
+    fd_set          monitored_FD_set;
 
     // Create Master Socket
-    masterSocket = server::bindSocket(&sock, SOCK_NAME);
+    master_socket_fd = server::bind_socket(&sock, SOCK_NAME);
 
     // Open server process to 3 client proccesses
-    server::serverListen(masterSocket, MAX_CONNECTIONS);
+    server::server_listen(master_socket_fd, MAX_CONNECTIONS);
 
     while(1){
+        data_fd = server::server_accept(master_socket_fd);
         sleep(3);
-        dataFile = server::serverAccept(masterSocket);
+        std::cout << "Connection pending" << '\n';
 
-        if (dataFile != -1){
+        if (data_fd != -1){
             // Process request received, service request
-            memset(dataBuffer, 0, BUFFER_SIZE);
-            ret = read(dataFile, dataBuffer, BUFFER_SIZE);
-            if(ret == -1){
-                perror("read");
-                exit(EXIT_FAILURE);
-            }
+            buffer = sock::msg_receive(data_fd);
 
-            // Perform operations replace Ls with Ws
-            char * current;
-            for ( int i = 0 ; *(dataBuffer + i) ; i++ ) {
-                current = dataBuffer + i;
-                if( *current == 'l' )
-                    *current = 'w';
-            }
+            // Perform deseired operations in server process
+            for( int i = 0 ; i < buffer.length() ; i++)
+                if(buffer[i] == 'l')
+                    buffer[i] = 'w';
 
-            // Send message back to client process
-            ret = write(dataFile, dataBuffer, BUFFER_SIZE);
-            if(ret == -1){
-                perror("write");
-                exit(EXIT_FAILURE);
-            }
+            // Pass message back to client process
+            sock::msg_send(data_fd, buffer);
+            close(data_fd);
         }
     }
     // Perform clean up before terminating server proccess
-    close(masterSocket);
-    close(dataFile);
+    close(master_socket_fd);
     return 0;
 }
