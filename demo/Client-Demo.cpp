@@ -15,13 +15,16 @@ int main () {
     // Attempt to establish connection with master proccess
     client::connect(&sock, dataFile);
 
-    // Send message to master proccess and receive response
-    sock::msg_send (dataFile, "hello world");
-    buffer = sock::msg_receive(dataFile);
-    std::cout << buffer << '\n';
+    while (1) {
+        getline(std::cin, buffer);
 
-    // Close file descriptors after use
+        // Send message to master proccess and receive response
+        sock::msg_send (dataFile, buffer);
+        buffer = sock::msg_receive(dataFile);
+        std::cout << buffer << '\n';
+    }
     close(dataFile);
+
 
     return 0;
 }
