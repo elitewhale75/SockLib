@@ -7,15 +7,14 @@
 
 #define BUFFER_SIZE 128
 
-//TODO: Change from nonblocking to async?
-int server::bind_socket(struct sockaddr_un * sock , std::string sockFile){
+int server::bind_socket(struct sockaddr_un * sock , std::string sock_file){
 
     int ret;                // Use for error handling
     int connection_socket;  // Return value for master socket
 
     /* In case program exiteded inadvertently on last run
      * remove socket */
-    unlink(sockFile.c_str());
+    unlink(sock_file.c_str());
 
     /* Create Master Socket */
     connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -28,9 +27,9 @@ int server::bind_socket(struct sockaddr_un * sock , std::string sockFile){
     /*Initialize socket credentials*/
     memset(sock, 0, sizeof(struct sockaddr_un));
     sock -> sun_family = AF_UNIX;
-    strncpy(sock->sun_path, sockFile.c_str(), sizeof(sock->sun_path) - 1);
+    strncpy(sock->sun_path, sock_file.c_str(), sizeof(sock->sun_path) - 1);
 
-    // Set up nonblocking (replace with AIO?)
+    // Set to nonblocking
     fcntl(connection_socket, F_SETFL, O_NONBLOCK);
 
     /*Bind syscall*/
@@ -49,22 +48,22 @@ int server::bind_socket(struct sockaddr_un * sock , std::string sockFile){
     return connection_socket;
 }
 
-void server::server_listen(int masterSocket, int maxConnections){
+void server::server_listen(int master_socket_fd, int max_connections){
     int ret;
 
-    ret = listen(masterSocket, maxConnections);
+    ret = listen(master_socket_fd, max_connections);
     if(ret == -1){
         perror("listen");
         exit(EXIT_FAILURE);
     }
 }
 
-int server::server_accept(int masterSocket){
-    int dataSocket; // Carries out actual data exchange with client
+int server::server_accept(int master_socket_fd){
+    int data_socket; // Carries out actual data exchange with client
 
     /* Accept syscall and initialize data file descriptor */
-    dataSocket = accept(masterSocket, NULL, NULL);
-    if(dataSocket == -1){
+    data_socket = accept(master_socket_fd, NULL, NULL);
+    if(data_socket == -1){
         // No pending connections
         if(errno == EAGAIN || errno == EWOULDBLOCK){
             ;
@@ -76,15 +75,37 @@ int server::server_accept(int masterSocket){
         std::cout << "Process connection established" << '\n';
     }
 
-    return dataSocket;
+    return data_socket;
 }
 
-int client::create_socket(struct sockaddr_un * sock , std::string sockFile){
-    int dataSocket;
+struct pollfd * server::init_poll (int master_socket_fd, int max_connections){
+    struct pollfd *     pfds;
+    int                 data_fd;
+    int                 active_processes;
+    
+    //TODO handle error with calloc
+    pfds = (pollfd *) calloc ( max_connections, sizeof(struct pollfd) );
+    pfds[0].fd = master_socket_fd;
+    pfds[0].events = POLLIN;
+
+    server::server_listen (master_socket_fd, max_connections);
+    active_processes = 1;
+    while (active_processes < max_connections){
+        if ( (data_fd = server::server_accept(master_socket_fd)) > 0 ){
+            pfds[active_processes].fd = data_fd;
+            pfds[active_processes].events = POLLIN | POLLOUT;
+            active_processes++;
+        }
+    }
+    return pfds;
+}
+
+int client::create_socket(struct sockaddr_un * sock , std::string sock_file){
+    int data_socket;
 
     /* Create data socket */
-    dataSocket = socket(AF_UNIX, SOCK_STREAM, 0);
-    if(dataSocket == -1){
+    data_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    if(data_socket == -1){
         perror("socket");
         exit(EXIT_FAILURE);
     }
@@ -94,14 +115,14 @@ int client::create_socket(struct sockaddr_un * sock , std::string sockFile){
 
     /* Connect to socket address. Non-blocking syscall */
     sock -> sun_family = AF_UNIX;
-    strncpy(sock->sun_path, sockFile.c_str(), sizeof(sock->sun_path) - 1);
-    return dataSocket;
+    strncpy(sock->sun_path, sock_file.c_str(), sizeof(sock->sun_path) - 1);
+    return data_socket;
 }
 
-int client::connect(struct sockaddr_un * sock , int dataSocket){
+int client::connect(struct sockaddr_un * sock , int data_socket){
     int ret;
 
-    ret = connect(dataSocket, 
+    ret = connect(data_socket, 
             (const struct sockaddr *) sock, 
             sizeof(sockaddr_un));
     if(ret ==-1){
@@ -111,17 +132,15 @@ int client::connect(struct sockaddr_un * sock , int dataSocket){
     return 0;
 }
 
-// TODO: Send and recv
-int sock::msg_send(int dataSocket , std::string message){
+int sock::msg_send(int data_socket , std::string message){
     int ret;
 
     /* Send data to server from buffer */
-    ret = send(dataSocket, message.c_str(), message.size(), MSG_WAITALL);
+    ret = send(data_socket, message.c_str(), message.size(), MSG_WAITALL);
     if(ret == -1){
         perror("send");
         exit(EXIT_FAILURE);
     }
-
     return 0;
 }
 

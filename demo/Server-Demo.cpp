@@ -8,51 +8,60 @@
 #define BUFFER_SIZE 128
 const int MAX_CONNECTIONS = 3;
 
+void pollin_operation(int data_fd);
+void pollout_operation(int data_fd, std::string message);
 
 int main () {
-
     int             master_socket_fd;
-    int             data_fd;
+    int             ready;
     sockaddr_un     sock;
-    int             ret;
     std::string     buffer;
-    
+    struct pollfd * pfds;
+
     // Create Master Socket
     master_socket_fd = server::bind_socket(&sock, SOCK_NAME);
     
-    // Client FDs for maintaining order. Master FD is also member
-    int active_procceses = 0;
-    struct pollfd pfds[MAX_CONNECTIONS];
-    pfds[active_procceses].fd = master_socket_fd;
-    pfds[active_procceses].events = POLLIN;
-    active_procceses++;
-    
+    //  Create array for server and client connections Master FD is also member
+    pfds = server::init_poll(master_socket_fd, MAX_CONNECTIONS);
 
-    // Open server process to 3 client proccesses
-    server::server_listen(master_socket_fd, MAX_CONNECTIONS);
-    while (active_procceses < MAX_CONNECTIONS){
-        if ( (data_fd = server::server_accept(master_socket_fd)) > 0 ){
-            pfds[active_procceses].fd = data_fd;
-            pfds[active_procceses].events = POLLIN | POLLOUT;
-            std::cout << "Process " << pfds[active_procceses].fd << " accepted" << '\n';
-            active_procceses++;
-        }
-    }
-
+    std::cout << "Begin monitoring client proccesses" << '\n';
     while(1){
-        int tmp = poll(pfds, MAX_CONNECTIONS, 0);
+        // Monitor file descriptors
+        ready = poll(pfds, MAX_CONNECTIONS, 0);
+        if ( ready == -1 ){
+            perror("ready");
+            exit(EXIT_FAILURE);
+        }
+        // Examine all connections
         for ( int i = 1 ; i < MAX_CONNECTIONS ; i++ ){
-            if ( pfds[i].revents & POLLIN){
-                buffer = sock::msg_receive(pfds[i].fd);
-                for ( int j = 0 ; j < buffer.length() ; j++ )
-                    if ( buffer[j] == 'l' )
-                        buffer[j] = 'w';
-                sock::msg_send(pfds[i].fd, buffer);
+            if ( pfds[i].revents & POLLIN ){ // Service Client Request
+                pollin_operation(pfds[i].fd);
+            } else if (pfds[i].revents & POLLOUT){ // Send Data to Client
+
+            } else { /* POLLERR | POLLHUP */
+
             }
         }
     }
     // Perform clean up before terminating server proccess
-    close(data_fd);
     close(master_socket_fd);
+    free(pfds);
     return 0;
+}
+
+void pollin_operation(int data_fd){
+    std::string         buffer;
+
+    buffer = sock::msg_receive(data_fd);
+
+    // Replace all ls in message to ws and send back to client
+    for ( int j = 0 ; j < buffer.length() ; j++ )
+        if ( buffer[j] == 'l' )
+            buffer[j] = 'w';
+
+    sock::msg_send(data_fd, buffer);
+}
+
+void pollout_operation(int data_fd, std::string message){
+
 }

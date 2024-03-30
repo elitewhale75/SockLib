@@ -1,18 +1,19 @@
 #ifndef SOCKLIB
 #define SOCKLIB
-#include <sys/un.h>
 #include <string>
+#include <sys/un.h>
+#include <poll.h>
 
 namespace server{
     /**
      * @brief Creates commmunication endpoint from 
-     * file descriptor specified in path
+     * file specified in path
      *
      * @param sock Central socket struct
      * @param sockFile Path to file for socket creation
      * @return master file descriptor for server process
      */
-    int bind_socket(struct sockaddr_un * sock , std::string sockFile);
+    int bind_socket(struct sockaddr_un * sock , std::string sock_file);
 
     /**
      * @brief Prepare master socket to listen to n number of connections
@@ -21,7 +22,7 @@ namespace server{
      * @param connections number of connections
      * @return 0 upon successful completion
      */
-    void server_listen(int masterSocket, int connections);
+    void server_listen(int master_socket_fd, int connections);
 
     /**
      * @brief Check for messages from client process
@@ -29,8 +30,23 @@ namespace server{
      * @param Master socket file descriptor to listen to
      * @return New file descriptor for data to pass between proccesses
      */
-    int server_accept(int masterSocket);
+    int server_accept(int master_socket_fd);
 
+    /**
+     * @brief
+     *
+     * @param
+     * @return
+     */
+    struct pollfd * init_poll (int master_socket_fd, int max_connections);
+
+    /**
+     * @brief
+     *
+     * @param
+     * @return
+     */
+    int monitor_poll (struct pollfd * pfds , int max_connections);
 };
 
 namespace client{
@@ -41,7 +57,7 @@ namespace client{
      * @param sockFile Path to file for socket creation
      * @return data file descriptor for client process
      */
-    int create_socket(struct sockaddr_un * sock , std::string sockFile);
+    int create_socket(struct sockaddr_un * sock , std::string sock_file);
     /**
      * @brief Establish connection to master process for message passing
      *
@@ -49,19 +65,19 @@ namespace client{
      * @param dataSocket File descriptor for message passing
      * @return 0 upon successful completion
      */
-    int connect(struct sockaddr_un * sock , int dataSocket);
+    int connect(struct sockaddr_un * sock , int socket_fd);
 };
 
 namespace sock{
 
     /**
-     * @brief Send message to master and read response from master
+     * @brief Send message to a process as a string
      *
      * @param socketFD File descriptor for data socket
      * @param dataBuffer Memory space to send and read messages from
      * @return 0 upon successful completion and new data to dataBuffer
      */
-    int msg_send(int socketFD , std::string message);
+    int msg_send(int socket_fd , std::string message);
     /**
      * @brief
      *
