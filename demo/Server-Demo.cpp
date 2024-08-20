@@ -12,6 +12,7 @@ void pollin_operation(int data_fd);
 void pollout_operation(int data_fd, std::string message);
 
 int main () {
+    int             ret;
     int             master_socket_fd;
     int             ready;
     int             active_processes;
@@ -35,14 +36,23 @@ int main () {
             exit(EXIT_FAILURE);
         }
 
-        server::monitor_poll(pfds, MAX_CONNECTIONS, &active_processes);
+        ret = server::monitor_connections (pfds, MAX_CONNECTIONS, &active_processes);
+        if (ret == -1) {
+            perror("monitor");
+        }
+
         // Examine all connections
         for ( int i = 1 ; i < MAX_CONNECTIONS ; i++ ){
-            if ( pfds[i].revents & POLLIN ){ // Service Client Request
+            if (pfds[i].revents & POLLHUP){ /* POLLERR | POLLHUP */
+                std::cout << "Closing process " << pfds[i].fd << "\n";
+                close(pfds[i].fd);
+                pfds[i].fd = ~pfds[i].fd;
+                active_processes--;
+            } else if ( pfds[i].revents & POLLIN ){ // Service Client Request
                 pollin_operation(pfds[i].fd);
             } else if (pfds[i].revents & POLLOUT){ // Send Data to Client
 
-            } else { /* POLLERR | POLLHUP */
+            } else {
 
             }
         }

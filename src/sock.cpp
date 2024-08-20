@@ -104,7 +104,7 @@ struct pollfd * server::init_poll (int master_socket_fd, int max_connections){
     return pfds;
 }
 
-int server::monitor_poll (struct pollfd * pfds , int max_connections, int * active_processes){
+int server::monitor_connections (struct pollfd * pfds , int max_connections, int * active_processes){
     int ret;
     int master_socket_fd;
     int current_process_fd;

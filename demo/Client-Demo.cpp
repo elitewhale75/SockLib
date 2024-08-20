@@ -25,6 +25,5 @@ int main () {
     }
     close(dataFile);
 
-
     return 0;
 }

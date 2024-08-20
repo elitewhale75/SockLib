@@ -33,20 +33,24 @@ namespace server{
     int server_accept(int master_socket_fd);
 
     /**
-     * @brief
+     * @brief Creates an array of poll fds to monitor
      *
-     * @param
-     * @return
+     * @param master_socket_fd server file descriptor
+     * @param max_connections Number of connections to maintain
+     * @return Array of poll fds
      */
     struct pollfd * init_poll (int master_socket_fd, int max_connections);
 
     /**
-     * @brief
+     * @brief Checks if there's any pending connections to add to poll array
      *
-     * @param
-     * @return
+     * @param pfds Array of poll fds
+     * @param max_connections maximum connections to check for
+     * @param Number of currently active active_processes
+     * @return 0 upon success
      */
-    int monitor_poll (struct pollfd * pfds , int max_connections, int * active_processes);
+    int monitor_connections (struct pollfd * pfds, int max_connections, 
+                             int * active_processes);
 };
 
 namespace client{
@@ -79,10 +83,10 @@ namespace sock{
      */
     int msg_send(int socket_fd , std::string message);
     /**
-     * @brief
+     * @brief Receive message from a process as a string
      *
-     * @param
-     * @return
+     * @param data_socket File descriptor for data socket
+     * @return Message from client/server process from specified Fd
      */
     std::string msg_receive(int data_socket);
 };
