@@ -81,15 +81,18 @@ int server::server_accept(int master_socket_fd){
 struct pollfd * server::init_poll (int master_socket_fd, int max_connections){
     struct pollfd *     pfds;
     int                 data_fd;
-    int                 active_processes;
     
     //TODO handle error with calloc
     pfds = (pollfd *) calloc ( max_connections, sizeof(struct pollfd) );
     pfds[0].fd = master_socket_fd;
-    pfds[0].events = POLLIN;
+    pfds[0].events = POLLIN | POLLOUT;
 
     server::server_listen (master_socket_fd, max_connections);
-    active_processes = 1;
+    int i = 1;
+    for ( ; i < max_connections ; i++){
+        pfds[i].fd = -1;
+    }
+    /*
     while (active_processes < max_connections){
         if ( (data_fd = server::server_accept(master_socket_fd)) > 0 ){
             pfds[active_processes].fd = data_fd;
@@ -97,7 +100,40 @@ struct pollfd * server::init_poll (int master_socket_fd, int max_connections){
             active_processes++;
         }
     }
+    */
     return pfds;
+}
+
+int server::monitor_poll (struct pollfd * pfds , int max_connections, int * active_processes){
+    int ret;
+    int master_socket_fd;
+    int current_process_fd;
+
+    if ((*active_processes) >= max_connections) {
+        printf("Server process at maximum occupancy\n");
+        return 0;
+    }
+    
+    if(!pfds){
+        perror("pfds");
+        return -1;
+    }
+
+    master_socket_fd = pfds[0].fd;
+    ret = server::server_accept(master_socket_fd);
+    if (ret > 0){
+        printf("Searching for available poll slot\n");
+        int i = 1;
+        for ( ; i < max_connections ; i++){
+            current_process_fd = pfds[i].fd;
+            if (current_process_fd < 0) {
+                pfds[i].fd = ret;
+                pfds[i].events = POLLIN | POLLOUT;
+                return 0;
+            }
+        }
+    }
+    return 0;
 }
 
 int client::create_socket(struct sockaddr_un * sock , std::string sock_file){

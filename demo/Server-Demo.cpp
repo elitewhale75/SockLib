@@ -14,6 +14,7 @@ void pollout_operation(int data_fd, std::string message);
 int main () {
     int             master_socket_fd;
     int             ready;
+    int             active_processes;
     sockaddr_un     sock;
     std::string     buffer;
     struct pollfd * pfds;
@@ -25,6 +26,7 @@ int main () {
     pfds = server::init_poll(master_socket_fd, MAX_CONNECTIONS);
 
     std::cout << "Begin monitoring client proccesses" << '\n';
+    active_processes = 1;
     while(1){
         // Monitor file descriptors
         ready = poll(pfds, MAX_CONNECTIONS, 0);
@@ -32,6 +34,8 @@ int main () {
             perror("ready");
             exit(EXIT_FAILURE);
         }
+
+        server::monitor_poll(pfds, MAX_CONNECTIONS, &active_processes);
         // Examine all connections
         for ( int i = 1 ; i < MAX_CONNECTIONS ; i++ ){
             if ( pfds[i].revents & POLLIN ){ // Service Client Request

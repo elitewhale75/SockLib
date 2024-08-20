@@ -46,7 +46,7 @@ namespace server{
      * @param
      * @return
      */
-    int monitor_poll (struct pollfd * pfds , int max_connections);
+    int monitor_poll (struct pollfd * pfds , int max_connections, int * active_processes);
 };
 
 namespace client{
