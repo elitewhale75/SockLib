@@ -1,3 +1,3 @@
 #! /bin/sh
 
-out/build/clientDemo
+out/build/clientDemo $1

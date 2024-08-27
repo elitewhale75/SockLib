@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string>
 #include <poll.h>
+#include <map>
 
 #define SOCK_NAME "/tmp/DemoSocket"
 #define BUFFER_SIZE 128
@@ -18,7 +19,9 @@ int main () {
     int             active_processes;
     sockaddr_un     sock;
     std::string     buffer;
+    std::string     users[3];
     struct pollfd * pfds;
+    std::map<int, std::string> user_map;
 
     // Create Master Socket
     master_socket_fd = server::bind_socket(&sock, SOCK_NAME);
@@ -36,19 +39,38 @@ int main () {
             exit(EXIT_FAILURE);
         }
 
+        // Monitor for new user connections
         ret = server::monitor_connections (pfds, MAX_CONNECTIONS, &active_processes);
         if (ret == -1) {
             perror("monitor");
+        } else if (ret > 0) {
+            int user_fd = ret;
+            // Add new user to user table
+            std::string user_name = sock::msg_receive (ret);
+            std::string msg = "Hello " + user_name + "\n";
+            sock::msg_send (ret, msg);
+
+            // Keep track of users
+            user_map[ret] = user_name;
+            for(const auto& pair : user_map){
+                std::cout << pair.first << "\t" << pair.second << "\n";
+            }
         }
 
         // Examine all connections
         for ( int i = 1 ; i < MAX_CONNECTIONS ; i++ ){
+            // If client disconnects, remove them from poll fds
             if (pfds[i].revents & POLLHUP){ /* POLLERR | POLLHUP */
-                std::cout << "Closing process " << pfds[i].fd << "\n";
+                int client_fd = pfds[i].fd;
+                std::string username = user_map[client_fd];
+                std::cout << "Closing process " << client_fd << "\n";
+                std::cout << "Goodbye " << username << '\n';
+                user_map.erase(client_fd);
                 close(pfds[i].fd);
                 pfds[i].fd = ~pfds[i].fd;
                 active_processes--;
-            } else if ( pfds[i].revents & POLLIN ){ // Service Client Request
+
+            } else if ( pfds[i].revents & POLLIN ){ // Client has data to process
                 pollin_operation(pfds[i].fd);
             } else if (pfds[i].revents & POLLOUT){ // Send Data to Client
 

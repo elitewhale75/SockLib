@@ -8,7 +8,6 @@
 #define BUFFER_SIZE 128
 
 int server::bind_socket(struct sockaddr_un * sock , std::string sock_file){
-
     int ret;                // Use for error handling
     int connection_socket;  // Return value for master socket
 
@@ -24,7 +23,7 @@ int server::bind_socket(struct sockaddr_un * sock , std::string sock_file){
     }
     std::cout << "Socket was created successfully" << '\n';
 
-    /*Initialize socket credentials*/
+    // Initialize socket credentials
     memset(sock, 0, sizeof(struct sockaddr_un));
     sock -> sun_family = AF_UNIX;
     strncpy(sock->sun_path, sock_file.c_str(), sizeof(sock->sun_path) - 1);
@@ -92,24 +91,15 @@ struct pollfd * server::init_poll (int master_socket_fd, int max_connections){
     for ( ; i < max_connections ; i++){
         pfds[i].fd = -1;
     }
-    /*
-    while (active_processes < max_connections){
-        if ( (data_fd = server::server_accept(master_socket_fd)) > 0 ){
-            pfds[active_processes].fd = data_fd;
-            pfds[active_processes].events = POLLIN | POLLOUT;
-            active_processes++;
-        }
-    }
-    */
     return pfds;
 }
 
-int server::monitor_connections (struct pollfd * pfds , int max_connections, int * active_processes){
+int server::monitor_connections (struct pollfd * pfds , int max_connections, int active_processes){
     int ret;
     int master_socket_fd;
     int current_process_fd;
 
-    if ((*active_processes) >= max_connections) {
+    if ( active_processes >= max_connections) {
         printf("Server process at maximum occupancy\n");
         return 0;
     }
@@ -129,7 +119,7 @@ int server::monitor_connections (struct pollfd * pfds , int max_connections, int
             if (current_process_fd < 0) {
                 pfds[i].fd = ret;
                 pfds[i].events = POLLIN | POLLOUT;
-                return 0;
+                return ret;
             }
         }
     }

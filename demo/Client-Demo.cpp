@@ -4,7 +4,11 @@
 
 #define SOCK_NAME "/tmp/DemoSocket"
 
-int main () {
+int main (int argc, char * argv[]) {
+    if (argc < 2){
+        printf("Please enter username\n");
+        exit(EXIT_FAILURE);
+    }
     int dataFile;
     sockaddr_un sock;
     std::string buffer;
@@ -14,6 +18,9 @@ int main () {
 
     // Attempt to establish connection with master proccess
     client::connect(&sock, dataFile);
+    sock::msg_send (dataFile, argv[1]);
+    buffer = sock::msg_receive (dataFile);
+    std::cout << buffer;
 
     while (1) {
         getline(std::cin, buffer);

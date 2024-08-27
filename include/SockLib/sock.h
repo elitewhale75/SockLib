@@ -47,10 +47,10 @@ namespace server{
      * @param pfds Array of poll fds
      * @param max_connections maximum connections to check for
      * @param Number of currently active active_processes
-     * @return 0 upon success
+     * @return position of new process in pfds, or 0 for no pending connections
      */
     int monitor_connections (struct pollfd * pfds, int max_connections, 
-                             int * active_processes);
+                             int active_processes);
 };
 
 namespace client{
