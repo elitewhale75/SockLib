@@ -40,7 +40,7 @@ int main () {
         }
 
         // Monitor for new user connections
-        ret = server::monitor_connections (pfds, MAX_CONNECTIONS, &active_processes);
+        ret = server::monitor_connections (pfds, MAX_CONNECTIONS, active_processes);
         if (ret == -1) {
             perror("monitor");
         } else if (ret > 0) {
